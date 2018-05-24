@@ -65,16 +65,16 @@ colnames(table.dge)
 table.ordered<-table %>% arrange(desc(rowSums(.[-1]))) 
 
 #?read.table
-#anottate<-read.table('../Trinotate.txt',sep="\t",row.names=NULL,header=T,quote="",na.strings='NA')
-#colnames(anottate)[colnames(anottate)=="transcript_id"] <- "Name"
+anottate<-read.table('../Trinotate.worms.txt',sep="\t",row.names=NULL,header=T,quote="",na.strings='NA')
+colnames(anottate)[colnames(anottate)=="transcript_id"] <- "Name"
 #?merge
-#table.ordered.anot<-merge(table.ordered,anottate,by="Name")
-#colnames(table.ordered.anot)
-#table.ordered.anot.ordered<-table.ordered.anot %>% arrange(desc(rowSums(.[2:7]))) 
-write.table(table.ordered,"salmon_results.txt",sep="\t",row.names=F,quote=F)
+table.ordered.anot<-merge(table.ordered,anottate,by="Name")
+colnames(table.ordered.anot)
+table.ordered.anot.ordered<-table.ordered.anot %>% arrange(desc(rowSums(.[2:4]))) 
+write.table(table.ordered.anot.ordered,"salmon_results.annot.txt",sep="\t",row.names=F,quote=F)
 
 #stage<-factor(c(rep("After_Emergence",2),rep("Before_Emergence",6),rep("Healthy",5),rep("Resistant",5)))
-stage<-factor(crep("single",1),(rep("dual",2)))
+stage<-factor(c(rep("single",1),rep("dual",2)))
 #altitute<-factor(c(rep("High",20),rep("Low",19)))
 stage
 table.sampleData<-data.frame(Sample=colnames(table.dge),stage)
@@ -88,17 +88,29 @@ stage<-factor(stage,levels = c ("single","dual"))
 design <- model.matrix(~stage)
 rownames(design) <- colnames(table.dge)
 design
-
 #> design
 #(Intercept) stagedual
 #W3big             1         1
 #W3small           1         1
 #W8                1         0
 
+stage<-factor(c(rep("big",1),rep("small",1),rep("big",1)))
+levels(stage)
+design <- model.matrix(~stage)
+rownames(design) <- colnames(table.dge)
+
+#design
+#(Intercept) stagesmall
+#W3big             1          0
+#W3small           1          1
+#W8                1          0
+
+
+
 table.dge<- estimateDisp(table.dge, design, robust=TRUE)
 table.dge$common.dispersion
 #
-sqrt(0.5067018)
+sqrt(0.5802843)
 #0.7 fucken high coefficent of variation
 
 
@@ -111,6 +123,27 @@ colnames(design)
 
 #fit <- glmQLFit(table.dge, design)
 #plotQLDisp(fit)
+
+
+#big small model
+
+fit <- glmFit(table.dge, design)
+
+colnames(design)
+
+BigSmall <- glmLRT(fit,contrast=c(0,1))
+BigSmall.toptags <- data.frame(topTags(BigSmall,n=nrow(table),sort="none"))
+BigSmall.toptags
+
+BigSmall.toptags.sig<-BigSmall.toptags[BigSmall.toptags$FDR < 0.05,]
+
+BigSmall.toptags.sig %>% arrange(desc(rowSums(.[-1]))) 
+library(data.table)
+BigSmall.toptags.sig.ordered<-setDT(BigSmall.toptags.sig)[order(-abs(logFC)), .SD]
+
+
+write.table(BigSmall.toptags.sig.ordered,"BigSmallContrastedgeR.toptags.sig.ordered.txt",sep="\t",row.names=F,quote=F)
+
 
 
 ##############contrasts##################

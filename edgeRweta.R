@@ -65,13 +65,13 @@ colnames(table.dge)
 table.ordered<-table %>% arrange(desc(rowSums(.[-1]))) 
 
 #?read.table
-#anottate<-read.table('../Trinotate.txt',sep="\t",row.names=NULL,header=T,quote="",na.strings='NA')
-#colnames(anottate)[colnames(anottate)=="transcript_id"] <- "Name"
+anottate<-read.table('../../../FirstRun/Trinotate.weta.txt',sep="\t",row.names=NULL,header=T,quote="",na.strings='NA')
+colnames(anottate)[colnames(anottate)=="transcript_id"] <- "Name"
 #?merge
-#table.ordered.anot<-merge(table.ordered,anottate,by="Name")
-#colnames(table.ordered.anot)
-#table.ordered.anot.ordered<-table.ordered.anot %>% arrange(desc(rowSums(.[2:7]))) 
-write.table(table.ordered,"salmon_results.txt",sep="\t",row.names=F,quote=F)
+table.ordered.anot<-merge(table.ordered,anottate,by="Name")
+colnames(table.ordered.anot)
+table.ordered.anot.ordered<-table.ordered.anot %>% arrange(desc(rowSums(.[2:4]))) 
+write.table(table.ordered.anot.ordered,"salmon_results.annot.txt",sep="\t",row.names=F,quote=F)
 
 #stage<-factor(c(rep("After_Emergence",2),rep("Before_Emergence",6),rep("Healthy",5),rep("Resistant",5)))
 stage<-factor(c(rep("infected",1),rep("uninfected",1),rep("infected",1)))
@@ -94,6 +94,19 @@ design
 #W3infected             1             1
 #W4uninfected           1             0
 #W8infected             1             1
+
+
+stage<-factor(c(rep("dualinfected",1),rep("uninfected",1),rep("singleinfected",1)))
+levels(stage)
+stage<-factor(stage,levels = c ("uninfected","singleinfected","dualinfected"))
+design <- model.matrix(~stage)
+rownames(design) <- colnames(table.dge)
+design
+
+#(Intercept) stagesingleinfected stagedualinfected
+#W3infected             1                   0                 1
+#W4uninfected           1                   0                 0
+#W8infected             1                   1                 0
 
 table.dge<- estimateDisp(table.dge, design, robust=TRUE)
 table.dge$common.dispersion
